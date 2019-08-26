@@ -1,8 +1,7 @@
 /*
 1. Use temp pin to generate voltage, Celsius & Fahrenheit
-2. Print as measurement,pin=A0 voltage=x,Celsius=y,Fahrenheit=z
-3. Send printed data to InfluxDB over http/UDP via Ethernet
-
+2. Print data using InfluxDB line protocol as Temp_Sensor,pin=A0 voltage=x,Celsius=y,Fahrenheit=z
+3. Send printed data to InfluxDB over serial port
 */
 
 const int temperaturePin = 0;
