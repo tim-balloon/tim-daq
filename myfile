@@ -1,0 +1,8 @@
+Trial push
+
+git clone https://github.com/tim-balloon/tim-daq.git
+mv myfile tim-daq
+cd tim-daq
+git add myfile
+git commit -m "Trial push"
+git push
