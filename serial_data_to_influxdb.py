@@ -10,7 +10,9 @@
 # More info on the line protocol here:
 # https://docs.influxdata.com/influxdb/v1.7/write_protocols/line_protocol_reference/
 
-# Note: This code was written for and used with MacOS, certain things may work
+# Note: Need to install InfluxDB python library (along w/ Grafana and InfluxDB) - info at 
+#       https://influxdb-python.readthedocs.io/en/latest/include-readme.html
+#       This code was written for and used with MacOS, certain things may work
 #       differently on other operating systems.
 
 import argparse # needed to specify database in command line
