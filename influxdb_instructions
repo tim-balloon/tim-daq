@@ -1,4 +1,4 @@
-Writing to InfluxDB:
+Writing to InfluxDB through Python (need Python library):
 
 	1.	Line protocol --> "measurement,tag_key=tag_value field_key=field_value timestamp"
 	      ⁃	Timestamp (in UTC) is automatically generated, but you might want to specify in case of lag between time of measurement and time of writing to database
