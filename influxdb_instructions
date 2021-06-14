@@ -1,0 +1,29 @@
+Writing to InfluxDB through Python (need Python library):
+
+	1.	Line protocol --> "measurement,tag_key=tag_value field_key=field_value timestamp"
+	      ⁃	Timestamp (in UTC) is automatically generated, but you might want to specify in case of lag between time of measurement and time of writing to database
+	      ⁃	Sample line protocol: "gyro,location=lab x=0.12345 1556892576842902000"
+	2.	Bucket is sensors
+	3.	Refer to /mychai/sn2influxdb.ipynb for example on formatting data into line protocol + writing to InfluxDB
+
+
+How to run InfluxDB UI on starfire:
+
+	1.	ssh into starfire server
+	2.	Enter ssh -N -L 8086:128.91.46.170:8086 user@starfire.physics.upenn.edu into local computer
+	3.	Open localhost:8086 in browser
+	4.	Go to Boards tab and select Gyro Test
+	5.	Select Seqnum Test cell to view in more detail
+	      ⁃	Can be done using tabs, or by entering a Flux query
+
+
+Sample Flux query:
+
+from(bucket:"sensors")
+  |> range(start: -1h)
+  |> filter(fn: (r) =>
+    r._measurement == "test" and
+    r._field == "test_seqnum" and
+    r.location == "lab"
+  )
+  |> aggregateWindow(every: 1s, fn: distinct)
