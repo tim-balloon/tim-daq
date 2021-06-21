@@ -1,14 +1,25 @@
 import numpy as np
 import serial 
 import struct
-
+import time
 def hexToFloat(value): #convert hexadecimal to floating point for gyro x,y,z readings   
     return struct.unpack('!f', bytes.fromhex(value))[0] 
 
 def s16(value): #converts hex into signed decimal from 2's complement
     return -(value & 0x8000) | (value & 0x7fff) 
 
-
+def cmd_ser(ser, cmdtext):
+    
+    # Needs carriage return
+    bcmdtest = bytearray((cmdtext+'\r').encode())
+    
+    ser.write(bcmdtest)
+    #time.sleep(0.01)
+    if ser.in_waiting > 0:
+        return ser.read().hex()
+#     else:
+#         print('Nothing returned')
+        
 # def ParseSerial(ser, header, splitline, sentence_length, Nbytes):
 
 #     cnt = 0
@@ -134,36 +145,41 @@ def ReadSentence_Mag(ser,header, splitline,sentence_length):
     sentence_complete = False
     
     while not sentence_complete:       
-        if len(sentence) == sentence_length :
-            
+        if len(sentence) == sentence_length - len(header):
             sentence_complete = True 
-            
+        
             split_result = [sentence[i:j] for i, j in zip([0] + splitline, splitline + [None])]
-            #print(split_result)
+            print(split_result)
             x_raw = split_result[0]
             y_raw = split_result[1]
             z_raw = split_result[2]
-            
-            
-        else:
-            bcmdtest = bytearray(('*99C').encode()) #Sending stream command to mag
-            ser.write(bcmdtest)
-            
-            onebyte = ser.read().hex() #Reading data stream
-            buf += onebyte 
                 
+        else:
+            bcmdtest = bytearray(('*99C\r').encode()) #Sending stream command to mag
+            ser.write(bcmdtest)
+            onebyte = ''
+            
+            #onebyte = cmd_ser(ser, '*99P')
+            #print(ser.read().hex()) #Reading data stream
+            onebyte = ser.read().hex()
+            
+            #print(onebyte)
+            buf += onebyte 
+            print(buf)
             if reading_sentence: # if start bytes found on last pass
                 # start acculumlating the data 
                 sentence += onebyte
+                #print(sentence)
+            
                 
             if header in buf:             
                 reading_sentence = True
-                    
+    
     return (round(s16(int(x_raw,16))*4/60000, 7), #Changing HEX to signed decimal from 2's complement..,,
             round(s16(int(y_raw,16))*4/60000, 7), #Then multiplying by scaling factor, and rounding.
             round(s16(int(z_raw,16))*4/60000,7)) # XYZ values are outputted from range of -30000 to 30000, must convert to 
                                                     #-2 to 2 gauss
-    #return (x_raw,y_raw,z_raw)
+#     #return (x_raw,y_raw,z_raw)
 
     
     
