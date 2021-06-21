@@ -38,7 +38,7 @@ measurement_name = 'heading'
 
 # In[3]:
 
-
+start_time = time.perf_counter()
 datestamp = time.strftime("%Y-%m-%d")
 declination = 11
 
@@ -48,6 +48,9 @@ if os.path.isdir("/home/user/tim-daq/data/"+datestamp+"-Mag") == 0:
     sys.exit()
     
 if os.path.isdir("/home/user/tim-daq/data/"+datestamp+"-Inclin") == 0:
+    print("No Directory Detected")
+    sys.exit()
+if os.path.isdir("/home/user/tim-daq/data/"+datestamp+"-Stepper") == 0:
     print("No Directory Detected")
     sys.exit()
 
@@ -67,11 +70,18 @@ else:
     file_list = glob.glob("/home/user/tim-daq/data/"+datestamp+"-Inclin/*.hdf5")
     inclin_file_name = max(file_list, key=os.path.getctime)
     #print(inclin_file_name)
+if len(os.listdir("/home/user/tim-daq/data/"+datestamp+"-Stepper")) == 0:
+    print("No Files Detected")
+    sys.exit()
+else:
+    file_list = glob.glob("/home/user/tim-daq/data/"+datestamp+"-Stepper/*.hdf5")
+    stepper_file_name = max(file_list, key=os.path.getctime)
+    #print(inclin_file_name)
       
         
 mag_file = h5py.File(mag_file_name, 'r', libver = 'latest', swmr = True)
 inclin_file = h5py.File(inclin_file_name, 'r', libver = 'latest', swmr = True)
-
+stepper_file = h5py.File(stepper_file_name, 'r', libver = 'latest', swmr = True)
 
 
 mag_x = mag_file['x']
@@ -79,19 +89,31 @@ mag_len = mag_x.shape[0]
 mag_y = mag_file['y']
 mag_z = mag_file['z']
 mag_timestamp = mag_file['time']
+
 inclin_x = inclin_file['x']
 inclin_y = inclin_file['y']
 inclin_len = inclin_x.shape[0]
 
+stepper_az = stepper_file['az']
+stepper_el = stepper_file['el']
+stepper_len = stepper_az.shape[0]
 
+mag_heading_list = []
+true_heading_list = []
+el_list = []
+zero_mag_deg = 0
+zero_true_deg = 0
+zero_el = 0
 # In[4]:
 
 
 while True:
     
+	
     #Grabs the latest data point index (from file dataset)
     mag_index_num = mag_file['index'][0] 
     inclin_index_num = inclin_file['index'][0]
+    stepper_index_num = stepper_file['index'][0]
     
     #Must refresh constantly..
     mag_x.id.refresh()
@@ -101,6 +123,9 @@ while True:
     
     inclin_x.id.refresh()
     inclin_y.id.refresh()
+
+    stepper_az.id.refresh()
+    stepper_el.id.refresh()
     
     #Creates list copies (much faster than list()..?)
     mag_x_list = mag_x[:]
@@ -109,6 +134,8 @@ while True:
     mag_timestamp_list = mag_timestamp[:]
     inclin_x_list = inclin_x[:]
     inclin_y_list = inclin_y[:]
+    stepper_az_list = stepper_az[:]
+    stepper_el_list = stepper_el[:]
     
     #Grabs latest data values
     mag_x_dat = mag_x_list[mag_index_num]
@@ -118,7 +145,12 @@ while True:
     
     inclin_x_dat = inclin_x_list[inclin_index_num]
     inclin_y_dat = inclin_y_list[inclin_index_num]
+
+    stepper_az_dat = stepper_az_list[stepper_index_num]
+    stepper_el_dat = stepper_el_list[stepper_index_num]
     
+    
+	
     #Heading calculations
     
     pitch = np.deg2rad(inclin_y_dat)
@@ -137,9 +169,22 @@ while True:
         magnetic_north += 360
     if true_north < 0:
         true_north += 360
-    
-    
-    line = '{measurement},location={location} heading={heading},heading2={heading2} {timestamp}'.format(measurement=measurement_name,location=location_tag, heading=magnetic_north,heading2=true_north, timestamp=mag_timestamp_dat)
+    while time.perf_counter() - start_time< .01:
+        mag_heading_list.append(magnetic_north)
+        true_heading_list.append(true_north)
+        el_list.append(inclin_x_dat)
+        zero_mag_deg = mag_heading_list[-1]
+        zero_true_deg = true_heading_list[-1]
+        zero_el = el_list[-1]
+        
+    print(stepper_az_dat)
+    print(stepper_el_dat)
+    stepper_heading_mag = zero_mag_deg - stepper_az_dat
+    if stepper_heading_mag < 0:
+        stepper_heading_north += 360
+    stepper_elevation = zero_el - stepper_el_dat
+
+    line = '{measurement},location={location} mag_heading={heading},true_heading={heading2},stepper_heading_mag={heading3},elevation={elevation} {timestamp}'.format(measurement=measurement_name,location=location_tag, heading=magnetic_north,heading2=true_north,heading3 = stepper_heading_mag,elevation = stepper_elevation, timestamp=mag_timestamp_dat)
     r = requests.post(QUERY_URI, data=line, headers=headers)
     #print(r.status_code)
     #print(line)
@@ -185,7 +230,7 @@ while True:
 
     
     
-    time.sleep(0.1)
+    
     
     #print(x_data[np.max(np.flatnonzero(x_data))])
     #print(mag_x_dat,mag_y_dat,mag_z_dat,"  ",inclin_x_dat,inclin_y_dat)
