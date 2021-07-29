@@ -1,3 +1,15 @@
+/*
+
+Gyroscope Parser in C
+The functions init_gyro_port() and read_gyro() can be used in Python scripts using ctypes.
+(See ctypes_test.py)
+
+Compile
+gcc CSerialParser.c -o CSerialParser
+
+*/
+
+
 // C library headers
 #include <stdio.h>
 
@@ -14,53 +26,36 @@
 
 #include <unistd.h> // write(), read(), close()
 
+
+//Struct TUPLE with gyroscope data
 typedef struct {
-  float a;
-  float b;
-  float c;
-  int d;
-  int f;
+  float x_data;
+  float y_data;
+  float z_data;
+  int seq_data;
+  int temp_data;
 
 }
 TUPLE;
 
+//Initializations
 TUPLE * read_gyro(int ser);
 void free_tuple(TUPLE * t);
 int init_gyro_port();
 
 int main(char ** argv, int argc) {
-  //int ser = init_gyro_port();
-  //char read_buf[1];
-  //char read_byte[3];
-  //char * header = "fe81ff55";
-  //char header_buf[72] = "";
-  //char sentence_buf[64] = "";
-
-  //printf("%d", ser);
-  //while(1) {
-    
-    //sleep(.006);
-    
-    //int num_bytes = read(ser, /*&*/read_buf, sizeof(read_buf)); //Reading from port (ser)
-    //sprintf(read_byte, "%02x", (unsigned char) read_buf[0]);
-    //strncat(header_buf, read_byte, 2);
-    //printf("%s\n", read_byte);
-    //printf("%s\n", header_buf);
-    
-    //memset(read_byte, 0, sizeof read_byte);
-    //printf("%09f\n", t->a);
   
-  
-  //free_tuple(t);
-  //tcflush(ser, TCIOFLUSH); //Initial flush of serial buffer
-  
-  //}
-  //return 0; // success
-  //}
 }
 
 
+
 int init_gyro_port() {
+  /*
+  Opens the gyroscope port and sets serial flags. 
+  Returns gyroscope port number.
+  */
+  
+
   // Open the serial port. Change device path as needed (currently set to an standard FTDI USB-UART cable type device)
   int serial_port = open("/dev/ttyUSB1", O_RDONLY | O_NDELAY);
   
@@ -112,10 +107,15 @@ int init_gyro_port() {
 
 
 TUPLE * read_gyro(int ser) {
+  /* param ser: gyroscope port number
 
-  char read_buf[1];
+  Reads from serial port, parses, and returns gyroscope XYZ, sequence number, and temperature
+  
+  */
+
+  char read_buf[1]; 
   char read_byte[3];
-  char * header = "fe81ff55";
+  char const *header = "fe81ff55";
   char header_buf[128] = "";
   char sentence_buf[128] = "";
 
@@ -124,7 +124,7 @@ TUPLE * read_gyro(int ser) {
 
   while (sentence_complete == 0) {
     
-    int num_bytes = read(ser, /*&*/read_buf, sizeof(read_buf)); //Reading from port (ser)
+    int num_bytes = read(ser, &read_buf, sizeof(read_buf)); //Reading from port (ser)
 
     // n is the number of bytes read. n may be 0 if no bytes were received, and can also be -1 to signal an error.
     if (num_bytes < 0) {
@@ -214,13 +214,10 @@ TUPLE * read_gyro(int ser) {
         header_buf[0] = '\0';
         
         return r;
-        //free(r); //Free from previous malloc (if not using free function)
+        //free(r); //Free from previous malloc 
       }
     }
   }
 }
 
-void free_tuple(TUPLE * r) {
-  free(r);
 
-}
