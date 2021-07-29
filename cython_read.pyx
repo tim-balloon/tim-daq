@@ -1,3 +1,8 @@
+"""
+ParseSerial.py, formatted for Cython compiler
+Must build cython_read_setup.py to update code.
+"""
+
 import serial 
 import struct
 import time
@@ -59,12 +64,15 @@ cpdef tuple ReadSentence_Gyro(ser, header, splitline, int sentence_length):
             z, # z
             status, # status
             temp) # temperature
+
 #     return (int(split_result[7],16), # seq numint(split_result[0],16), 
 #             hexToFloat(split_result[0]), # x
 #             hexToFloat(split_result[1]), # y
 #             hexToFloat(split_result[2]), # z
 #             int(split_result[6],16), # status
 #             int(split_result[8],16)) # temperature
+
+
 
 cpdef tuple ReadSentence_Inclin(ser, header, list splitline, int sentence_length):
     buf = ''
@@ -84,8 +92,7 @@ cpdef tuple ReadSentence_Inclin(ser, header, list splitline, int sentence_length
         if len(sentence) == sentence_length - len(header):
             
             sentence_complete = True 
-            
-            #split_result = [sentence[i:j] for i, j in zip([0] + splitline, splitline + [None])]
+
             for i in range(split_num):
                 split_result[i] = sentence[splitline[i]:splitline[i+1]]     
             
@@ -95,8 +102,7 @@ cpdef tuple ReadSentence_Inclin(ser, header, list splitline, int sentence_length
             print(split_result)
             if int(x_raw[0]) == 1: #See inclimoneter reference documents for data conversion
                 x = int(x_raw[1:6])/1000 * -1 
-                #In summary, we check the first digit of each field for the sign of the value, then turn the remaining digits 
-                #into a decimal value
+                #In summary, we check the first digit of each field for the sign of the value, then turn the remaining digits into a decimal value
                 
             else: 
                 x = int(x_raw[1:6])/1000
@@ -142,10 +148,8 @@ cpdef tuple ReadSentence_Mag(ser,header, list splitline, int sentence_length):
         if len(sentence) == sentence_length - len(header):
             sentence_complete = True 
         
-            #split_result = [sentence[i:j] for i, j in zip([0] + splitline, splitline + [None])]
             for i in range(split_num):
                 split_result[i] = sentence[splitline[i]:splitline[i+1]]     
-            #rint(split_result)
             
             x = round(s16(int(split_result[0],16))*4/60000, 7)
             y = round(s16(int(split_result[1],16))*4/60000, 7)
@@ -156,22 +160,16 @@ cpdef tuple ReadSentence_Mag(ser,header, list splitline, int sentence_length):
             ser.write(bcmdtest)
             onebyte = ''
             
-            #onebyte = cmd_ser(ser, '*99P')
-            #print(ser.read().hex()) #Reading data stream
             onebyte = ser.read().hex()
             buf += onebyte 
-            #print(onebyte)
-            
-            #print(buf)
+                
             if reading_sentence: # if start bytes found on last pass
                 
                 # start acculumlating the data 
                 sentence += onebyte
-                #print(sentence)
-            
                 
-            if header in onebyte: 
-                
+   
+            if header in onebyte:      
                 reading_sentence = True
     
     return (x, #Changing HEX to signed decimal from 2's complement..,,
